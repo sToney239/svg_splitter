@@ -3,6 +3,7 @@ class SVGSplitter {
         this.svgContent = null;
         this.originalSVG = null;
         this.splitResult = null;
+        this.annotationsVisible = true; // 标注显示状态
         this.initializeEventListeners();
     }
 
@@ -319,7 +320,17 @@ class SVGSplitter {
             while (previewContainer.firstChild) {
                 previewContainer.removeChild(previewContainer.firstChild);
             }
-            previewContainer.appendChild(newSVG);
+            
+            // 创建包装容器以确保SVG正确显示
+            const wrapper = document.createElement('div');
+            wrapper.style.width = '100%';
+            wrapper.style.height = '100%';
+            wrapper.style.overflow = 'auto';
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.appendChild(newSVG);
+            previewContainer.appendChild(wrapper);
 
             // 保存分割结果
             this.splitResult = {
@@ -495,12 +506,14 @@ class SVGSplitter {
     addAnnotations(svg, part, index, label, percentage, labelSize, textDistance, totalWidth, height, verticalScale = 1) {
         // 将百分比转换为像素距离
         const distancePixels = (textDistance / 100) * height;
-        const bracketOffset = Math.max(8, distancePixels * 0.3);
-        const lineOffset = Math.max(12, distancePixels * 0.4);
+        // 修复方括号长度问题：使用固定的偏移值，而不是基于distancePixels的比例值
+        const bracketOffset = 15; // 固定值，不随文字距离变化
+        const lineOffset = 20; // 固定值，确保方括号长度一致
 
         // 边框组
         const borderGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         borderGroup.setAttribute('id', `border-part${index + 1}`);
+        borderGroup.setAttribute('class', 'annotation-border'); // 添加类名用于切换显示
 
         // 上边框线
         const topLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -555,6 +568,7 @@ class SVGSplitter {
         // 文本组
         const textGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         textGroup.setAttribute('id', `text-part${index + 1}`);
+        textGroup.setAttribute('class', 'annotation-text'); // 添加类名用于切换显示
 
         // 检测是否包含中文
         const containsChinese = /[\u4e00-\u9fff]/.test(label);
@@ -670,6 +684,41 @@ class SVGSplitter {
         }
     }
 
+    toggleAnnotations() {
+        this.annotationsVisible = !this.annotationsVisible;
+        
+        // 更新按钮状态
+        const toggleBtn = document.getElementById('toggle-annotations');
+        if (toggleBtn) {
+            if (this.annotationsVisible) {
+                toggleBtn.textContent = '👁️ 隐藏';
+                toggleBtn.classList.remove('hidden');
+            } else {
+                toggleBtn.textContent = '👁️‍🗨️ 显示';
+                toggleBtn.classList.add('hidden');
+            }
+        }
+        
+        // 切换标注显示
+        const previewContainer = document.getElementById('preview-container');
+        if (previewContainer) {
+            const svg = previewContainer.querySelector('svg');
+            if (svg) {
+                // 切换边框显示
+                const borderElements = svg.querySelectorAll('.annotation-border');
+                borderElements.forEach(el => {
+                    el.style.display = this.annotationsVisible ? 'block' : 'none';
+                });
+                
+                // 切换文本显示
+                const textElements = svg.querySelectorAll('.annotation-text');
+                textElements.forEach(el => {
+                    el.style.display = this.annotationsVisible ? 'block' : 'none';
+                });
+            }
+        }
+    }
+
     showToast(message, type = 'info') {
         const toast = document.getElementById('toast');
         toast.textContent = message;
@@ -739,5 +788,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.exportImage = function(format) {
         svgSplitter.exportImage(format);
+    };
+
+    window.toggleAnnotations = function() {
+        svgSplitter.toggleAnnotations();
     };
 });
