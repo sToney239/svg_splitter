@@ -691,10 +691,10 @@ class SVGSplitter {
         const toggleBtn = document.getElementById('toggle-annotations');
         if (toggleBtn) {
             if (this.annotationsVisible) {
-                toggleBtn.textContent = '👁️ 隐藏';
+                toggleBtn.textContent = '隐藏标注';
                 toggleBtn.classList.remove('hidden');
             } else {
-                toggleBtn.textContent = '👁️‍🗨️ 显示';
+                toggleBtn.textContent = '显示标注';
                 toggleBtn.classList.add('hidden');
             }
         }
